@@ -1,0 +1,71 @@
+practical:
+==========
+* create 3 modules
+1.Network module comprising a security group
+2.EC2 module comprising ec2 and ansible
+3.Route53 module comprising DNS record
+
+
+root module in terraform:
+=========================
+terraform/
+├── main.tf          # root module
+├── variables.tf
+└── modules/
+    └── vpc/
+        ├── main.tf  # child module
+        └── outputs.tf
+
+Root module → terraform/
+Child module → terraform/modules/vpc/
+Variables are declared in the root module, passed to child modules via module blocks, and read in child modules through their own variable declarations.
+
+module to module communication:Terraform modules communicate only through the root module using outputs and input variables; direct module-to-module access is not allowed.
+===============================
+Input variables = variables declared to receive values from outside the module(declaring a variables in root module)
+root module:(main.tf)
+=====================
+module "frontend"{
+source = "./frontend"
+env = "dev"
+}
+
+declare variables in root module
+=================================
+variable "env"{}
+
+module: frontend
+================
+read variables: variable "env"{}
+output "env"{
+value = "${var.env}-display-root-module"
+}
+module:display
+==============
+read variables: variable "env"{}
+resource "local_file" "foo" {
+  content  = "store in local"
+  filename = "/tmp/1.txt"
+}
+
+root module:display
+===================
+module "display"{
+source="./display"
+env = module.frontend.env
+}
+
+module: network:
+===============
+Security groups define inbound and outbound traffic rules, but actual traffic depends also on NACLs, routing, and whether the application is listening on the port.
+SG inbound → allows traffic to reach the instance
+
+SG outbound → allows the instance to send traffic out
+
+Application + NACL + routing + OS firewall → all must permit traffic for it to actually succeed
+
+module:ec2
+==========
+create a single instance
+module:route53
+==============
